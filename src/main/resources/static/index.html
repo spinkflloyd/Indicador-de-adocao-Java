@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Indicação de animais para adoção</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --fundo:#EAF1F0; --tinta:#14262B; --suave:#4C6166; --verde:#0B6B63; --verde-escuro:#084A45;
+  --etiqueta:#F2B53B; --recusa:#B5412C; --linha:#C6D5D2; --branco:#FFFFFF;
+  --fonte:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--fundo);color:var(--tinta);font:400 1rem/1.5 var(--fonte)}
+.pagina{max-width:980px;margin:0 auto;padding:28px 20px 64px}
+h1{font-size:clamp(1.9rem,4.5vw,2.8rem);line-height:1.1;margin:0 0 8px;font-weight:800;letter-spacing:-.02em}
+.intro{margin:0 0 24px;max-width:58ch;color:var(--suave)}
+h2{font-size:1.25rem;margin:0 0 12px}
+
+nav[role=tablist]{display:flex;flex-wrap:wrap;gap:4px 20px;border-bottom:2px solid var(--linha);margin-bottom:24px}
+nav button{font:600 .95rem var(--fonte);color:var(--suave);background:none;border:0;padding:10px 0;margin-bottom:-2px;border-bottom:3px solid transparent;cursor:pointer}
+nav button[aria-selected=true]{color:var(--verde-escuro);border-bottom-color:var(--etiqueta)}
+nav button:hover{color:var(--tinta)}
+:focus-visible{outline:3px solid var(--verde);outline-offset:2px}
+
+form.painel{background:var(--branco);border:1px solid var(--linha);border-radius:14px;padding:20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px 20px;align-items:end}
+label{display:grid;gap:4px;font-weight:600;font-size:.95rem}
+select{font:400 1rem var(--fonte);padding:9px 10px;border:1px solid var(--linha);border-radius:8px;background:var(--branco);color:var(--tinta)}
+button.acao{font:600 1rem var(--fonte);background:var(--verde);color:#fff;border:0;border-radius:8px;padding:11px 20px;cursor:pointer}
+button.acao:hover{background:var(--verde-escuro)}
+.acoes{grid-column:1/-1}
+
+.msg{margin:24px 0 14px;font-weight:600}
+.erro{color:var(--recusa);font-weight:600;margin:16px 0}
+.vazio{color:var(--suave)}
+
+.grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
+.tag{background:var(--branco);border:1px solid var(--linha);border-radius:14px;overflow:hidden}
+.tag header{background:var(--etiqueta);padding:28px 16px 12px;position:relative}
+.tag header::before{content:"";position:absolute;top:10px;left:50%;width:12px;height:12px;margin-left:-6px;border-radius:50%;background:var(--fundo);box-shadow:inset 0 1px 2px rgba(0,0,0,.3)}
+.tag h3{margin:0;font-size:1.6rem;font-weight:800;text-transform:capitalize;letter-spacing:-.01em}
+.tag .sub{margin:0;font-size:.9rem}
+.tag .corpo{padding:12px 16px 16px}
+.tag ul{list-style:none;margin:0;padding:0}
+.tag .fatos{display:flex;flex-wrap:wrap;gap:4px 12px;margin-bottom:10px;font-size:.9rem;color:var(--suave)}
+.tag .sinais li{font-size:.9rem;padding:1px 0}
+.sinais li::before{display:inline-block;width:1.3em;font-weight:800}
+.sinais li.ok{color:var(--verde-escuro)} .sinais li.ok::before{content:"✓"}
+.sinais li.nao{color:var(--recusa)} .sinais li.nao::before{content:"✗"}
+
+.perfil{background:var(--branco);border:1px solid var(--linha);border-radius:14px;padding:16px 18px;margin-bottom:14px}
+.perfil h3{margin:0 0 4px;font-size:1.3rem;text-transform:capitalize}
+.perfil p{margin:4px 0}
+.perfil .rotulo{color:var(--suave)}
+
+.duas{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:28px}
+.resposta{background:var(--branco);border:1px solid var(--linha);border-left:6px solid var(--verde);border-radius:10px;padding:14px 18px;margin-top:20px}
+.resposta.recusa{border-left-color:var(--recusa)}
+.resposta ul{margin:8px 0 0;padding-left:20px}
+.exemplo{background:var(--branco);border:1px solid var(--linha);border-radius:12px;padding:14px 18px;margin-bottom:12px}
+.exemplo h3{font-size:1rem;margin:0 0 6px}
+.exemplo p{margin:2px 0}
+</style>
+</head>
+<body>
+<main class="pagina">
+  <h1>Indicação de animais para adoção</h1>
+  <p class="intro">Conte como é a sua casa e a sua rotina. O sistema indica os animais do abrigo que combinam com você e explica por que um animal não foi indicado.</p>
+
+  <nav role="tablist" aria-label="Seções">
+    <button role="tab" data-alvo="buscar" aria-selected="true">Buscar um animal</button>
+    <button role="tab" data-alvo="abrigo" aria-selected="false">Animais do abrigo</button>
+    <button role="tab" data-alvo="perfis" aria-selected="false">Perfis cadastrados</button>
+    <button role="tab" data-alvo="destaques" aria-selected="false">Prioridade e saúde</button>
+    <button role="tab" data-alvo="explicar" aria-selected="false">Por que não?</button>
+    <button role="tab" data-alvo="exemplos" aria-selected="false">Exemplos</button>
+  </nav>
+
+  <section id="buscar"></section>
+  <section id="abrigo" hidden></section>
+  <section id="perfis" hidden></section>
+  <section id="destaques" hidden></section>
+  <section id="explicar" hidden></section>
+  <section id="exemplos" hidden></section>
+</main>
+
+<script>
+// ---------- utilitários ----------
+function h(tag, props, ...filhos) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(props || {})) {
+    if (k === 'class') e.className = v;
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
+    else e.setAttribute(k, v);
+  }
+  for (const f of filhos.flat()) {
+    if (f == null) continue;
+    e.append(f.nodeType ? f : document.createTextNode(f));
+  }
+  return e;
+}
+const bonito = s => String(s).replaceAll('_', ' ');
+const lista = nomes => nomes.length ? nomes.join(', ') : 'ninguém';
+
+async function api(url, opcoes) {
+  const r = await fetch(url, opcoes);
+  if (!r.ok) {
+    let msg = 'Erro ' + r.status;
+    try { msg = (await r.json()).message || msg; } catch (_) {}
+    throw new Error(msg);
+  }
+  return r.json();
+}
+function erro(e) { return h('p', { class: 'erro', role: 'alert' }, e.message); }
+
+// ---------- cartão do animal (etiqueta de coleira) ----------
+function sinal(ok, sim, nao) { return h('li', { class: ok ? 'ok' : 'nao' }, ok ? sim : nao); }
+function cartao(a) {
+  return h('article', { class: 'tag' },
+    h('header', {}, h('h3', {}, a.nome), h('p', { class: 'sub' }, `${a.especie}, ${bonito(a.raca)}`)),
+    h('div', { class: 'corpo' },
+      h('ul', { class: 'fatos' },
+        h('li', {}, `porte ${a.porte}`), h('li', {}, a.faixaEtaria), h('li', {}, `energia ${a.energia}`)),
+      h('ul', { class: 'sinais' },
+        sinal(a.vacinado, 'vacinado', 'não vacinado'),
+        sinal(a.sociavelCriancas, 'convive bem com crianças', 'não convive com crianças'),
+        sinal(a.sociavelAnimais, 'convive bem com outros animais', 'não convive com outros animais'),
+        a.hipoalergenico ? sinal(true, 'hipoalergênico') : null)));
+}
+const grade = animais => h('div', { class: 'grade' }, animais.map(cartao));
+
+// ---------- campos de formulário ----------
+function campo(rotulo, nome, opcoes) {
+  return h('label', {}, rotulo,
+    h('select', { name: nome }, opcoes.map(([v, t]) => h('option', { value: v }, t))));
+}
+const SIM_NAO = [['nao', 'Não'], ['sim', 'Sim']];
+
+// ---------- Buscar um animal ----------
+function montarBuscar(alvo) {
+  const resultado = h('div', { 'aria-live': 'polite' });
+  const racaSelect = h('select', { name: 'raca' }, h('option', { value: 'qualquer' }, 'Sem preferência'));
+  const especieCampo = campo('Que animal você procura?', 'especie',
+    [['qualquer', 'Qualquer um'], ['cachorro', 'Cachorro'], ['gato', 'Gato'], ['coelho', 'Coelho']]);
+
+  async function carregarRacas() {
+    const esp = especieCampo.querySelector('select').value;
+    try {
+      const racas = await api('/api/racas' + (esp === 'qualquer' ? '' : '?especie=' + esp));
+      racaSelect.replaceChildren(h('option', { value: 'qualquer' }, 'Sem preferência'),
+        ...racas.map(r => h('option', { value: r }, bonito(r))));
+    } catch (e) { resultado.replaceChildren(erro(e)); }
+  }
+  especieCampo.querySelector('select').addEventListener('change', carregarRacas);
+
+  const form = h('form', { class: 'painel' },
+    especieCampo,
+    h('label', {}, 'Tem preferência de raça?', racaSelect),
+    campo('Onde você mora?', 'moradia', [['apartamento', 'Apartamento'],
+      ['casa_pequena', 'Casa pequena (sem quintal)'], ['casa_quintal', 'Casa com quintal']]),
+    campo('Mora com crianças?', 'criancas', SIM_NAO),
+    campo('Mora com outros animais?', 'animais', SIM_NAO),
+    campo('Quanto tempo livre você tem para o animal?', 'tempo',
+      [['pouco', 'Pouco'], ['medio', 'Médio'], ['muito', 'Muito']]),
+    campo('Alguém em casa tem alergia a pelos?', 'alergia', SIM_NAO),
+    campo('Você já teve animais antes?', 'experiencia',
+      [['sim', 'Sim, já tive'], ['nao', 'Não, seria o primeiro']]),
+    h('div', { class: 'acoes' }, h('button', { class: 'acao', type: 'submit' }, 'Ver animais indicados')));
+
+  form.addEventListener('submit', async ev => {
+    ev.preventDefault();
+    const d = Object.fromEntries(new FormData(form));
+    const corpo = {
+      especie: d.especie, raca: d.raca, moradia: d.moradia,
+      criancas: d.criancas === 'sim', animais: d.animais === 'sim', tempo: d.tempo,
+      alergico: d.alergia === 'sim', iniciante: d.experiencia === 'nao'
+    };
+    try {
+      const r = await api('/api/buscar', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpo)
+      });
+      const texto = {
+        INDICADOS: 'Animais indicados para você:',
+        SO_COMPATIVEIS: 'Nenhum animal com essa espécie ou raça é compatível com o seu perfil. Mas estes outros combinam com você:',
+        NENHUM: 'Nenhum animal do abrigo é compatível com o seu perfil no momento.'
+      }[r.situacao];
+      resultado.replaceChildren(h('p', { class: 'msg' }, texto), r.animais.length ? grade(r.animais) : null);
+    } catch (e) { resultado.replaceChildren(erro(e)); }
+  });
+
+  alvo.append(form, resultado);
+  carregarRacas();
+}
+
+// ---------- Animais do abrigo ----------
+async function montarAbrigo(alvo) {
+  try { alvo.append(h('h2', {}, 'Animais do abrigo'), grade(await api('/api/animais'))); }
+  catch (e) { alvo.append(erro(e)); }
+}
+
+// ---------- Perfis cadastrados ----------
+async function montarPerfis(alvo) {
+  try {
+    const pessoas = await api('/api/pessoas');
+    alvo.append(h('h2', {}, 'Perfis cadastrados'));
+    for (const p of pessoas) {
+      const [rec, duplas] = await Promise.all([
+        api(`/api/pessoas/${p.nome}/recomendados`), api(`/api/pessoas/${p.nome}/duplas`)]);
+      alvo.append(h('article', { class: 'perfil' },
+        h('h3', {}, p.nome),
+        h('p', {}, `Mora em ${bonito(p.moradia)}, ${p.criancas ? 'com' : 'sem'} crianças, ` +
+          `${p.animais ? 'com' : 'sem'} outros animais, tempo livre ${p.tempo}.` +
+          (p.alergico ? ' Tem alergia a pelos.' : '') + (p.iniciante ? ' Nunca teve animais.' : '')),
+        h('p', {}, h('span', { class: 'rotulo' }, 'Recomendados: '), lista(rec.map(a => a.nome))),
+        h('p', {}, h('span', { class: 'rotulo' }, 'Podem ser adotados juntos: '),
+          duplas.length ? duplas.map(d => `${d.primeiro} e ${d.segundo}`).join('; ') : 'nenhuma dupla')));
+    }
+  } catch (e) { alvo.append(erro(e)); }
+}
+
+// ---------- Prioridade e saúde ----------
+async function montarDestaques(alvo) {
+  try {
+    const [prio, saude] = await Promise.all([api('/api/animais/prioritarios'), api('/api/animais/saude')]);
+    alvo.append(h('div', { class: 'duas' },
+      h('div', {}, h('h2', {}, 'Prioridade de adoção (idosos)'), grade(prio)),
+      h('div', {}, h('h2', {}, 'Precisam de atenção de saúde'),
+        saude.length ? grade(saude) : h('p', { class: 'vazio' }, 'Nenhum animal precisa de atenção no momento.'))));
+  } catch (e) { alvo.append(erro(e)); }
+}
+
+// ---------- Por que não? ----------
+async function montarExplicar(alvo) {
+  try {
+    const [pessoas, animais] = await Promise.all([api('/api/pessoas'), api('/api/animais')]);
+    const resposta = h('div', { 'aria-live': 'polite' });
+    const form = h('form', { class: 'painel' },
+      campo('Para qual pessoa?', 'pessoa', pessoas.map(p => [p.nome, p.nome])),
+      campo('Sobre qual animal?', 'animal', animais.map(a => [a.nome, a.nome])),
+      h('div', { class: 'acoes' }, h('button', { class: 'acao', type: 'submit' }, 'Explicar')));
+    form.addEventListener('submit', async ev => {
+      ev.preventDefault();
+      const d = Object.fromEntries(new FormData(form));
+      try {
+        const x = await api(`/api/explicar?animal=${d.animal}&pessoa=${d.pessoa}`);
+        resposta.replaceChildren(h('div', { class: 'resposta' + (x.recomendado ? '' : ' recusa') },
+          h('strong', {}, x.mensagem),
+          x.motivos.length ? h('ul', {}, x.motivos.map(m => h('li', {}, m))) : null));
+      } catch (e) { resposta.replaceChildren(erro(e)); }
+    });
+    alvo.append(form, resposta);
+  } catch (e) { alvo.append(erro(e)); }
+}
+
+// ---------- Exemplos ----------
+async function montarExemplos(alvo) {
+  try {
+    const exemplos = await api('/api/exemplos');
+    alvo.append(h('h2', {}, 'Consultas de exemplo'),
+            ...exemplos.map((x, i) => h('article', { class: 'exemplo' },
+        h('h3', {}, `${i + 1}. ${x.pergunta}`),
+        x.resultado.map(l => h('p', {}, l.trim())))));
+  } catch (e) { alvo.append(erro(e)); }
+}
+
+// ---------- abas ----------
+const montadores = {
+  buscar: montarBuscar, abrigo: montarAbrigo, perfis: montarPerfis,
+  destaques: montarDestaques, explicar: montarExplicar, exemplos: montarExemplos
+};
+const montadas = new Set();
+
+function abrir(id) {
+  document.querySelectorAll('nav [role=tab]').forEach(b =>
+    b.setAttribute('aria-selected', String(b.dataset.alvo === id)));
+  document.querySelectorAll('main > section').forEach(s => { s.hidden = s.id !== id; });
+  if (!montadas.has(id)) { montadas.add(id); montadores[id](document.getElementById(id)); }
+}
+document.querySelectorAll('nav [role=tab]').forEach(b => b.addEventListener('click', () => abrir(b.dataset.alvo)));
+abrir('buscar');
+</script>
+</body>
+</html>
