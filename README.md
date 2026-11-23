@@ -1,9 +1,5 @@
 # 🐾 Indicação de Animais para Adoção (versão Java)
 
-<p align="center">
-  🌐 <a href="https://SEU-SERVICO.onrender.com"><b>Acesse o site</b></a>
-</p>
-
 ---
 
 <h2 align="center">📖 Sobre o projeto</h2>
@@ -59,7 +55,7 @@ Os fatos, as regras e os resultados são os mesmos; o menu de terminal virou uma
 | Front-end | ![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white) ![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white) ![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black) |
 | Back-end | ![Java](https://img.shields.io/badge/Java-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white) ![Spring Boot](https://img.shields.io/badge/Spring_Boot-6DB33F?style=for-the-badge&logo=springboot&logoColor=white) |
 | Build e testes | ![Maven](https://img.shields.io/badge/Maven-C71A36?style=for-the-badge&logo=apachemaven&logoColor=white) ![JUnit 5](https://img.shields.io/badge/JUnit_5-25A162?style=for-the-badge&logo=junit5&logoColor=white) |
-| Dados | Mantidos em memória, sem banco de dados |
+| Dados | Por enquanto mantidos mantido apenas em memória, sem banco de dados |
 | Projeto original | ![SWI-Prolog](https://img.shields.io/badge/SWI--Prolog-A9382B?style=for-the-badge) |
 | Hospedagem | ![Render](https://img.shields.io/badge/Render-46E3B7?style=for-the-badge&logo=render&logoColor=black) ![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white) |
 
