@@ -11,6 +11,7 @@ import adocao.service.Exemplo;
 import adocao.service.Explicacao;
 import adocao.service.RegrasService;
 import adocao.service.ResultadoBusca;
+import adocao.web.Dtos.AnaliseDto;
 import adocao.web.Dtos.AnimalDto;
 import adocao.web.Dtos.BuscaRequest;
 import adocao.web.Dtos.BuscaResponse;
@@ -106,15 +107,7 @@ public class AdocaoController {
     /** Menu: "Buscar um animal para mim". O perfil do visitante não é guardado. */
     @PostMapping("/buscar")
     public BuscaResponse buscar(@RequestBody BuscaRequest req) {
-        Pessoa visitante = new Pessoa(
-            "visitante",
-            lerObrigatorio(Moradia.class, req.moradia(), "moradia"),
-            req.criancas(),
-            req.animais(),
-            lerObrigatorio(Tempo.class, req.tempo(), "tempo"),
-            req.alergico(),
-            req.iniciante());
-
+        Pessoa visitante = visitante(req);
         String raca = (req.raca() == null || req.raca().equalsIgnoreCase("qualquer")) ? null : req.raca();
         ResultadoBusca resultado = regras.buscar(visitante, lerOpcional(Especie.class, req.especie()), raca);
 
@@ -123,7 +116,30 @@ public class AdocaoController {
             resultado.animais().stream().map(AnimalDto::de).toList());
     }
 
+    /**
+     * Checklist: para o perfil informado, confere as 7 regras em todos os animais do abrigo
+     * (espécie e raça do pedido são ignoradas).
+     */
+    @PostMapping("/checklist")
+    public List<AnaliseDto> checklist(@RequestBody BuscaRequest req) {
+        Pessoa visitante = visitante(req);
+        return abrigo.animais().stream()
+            .map(a -> new AnaliseDto(AnimalDto.de(a), regras.recomendado(a, visitante), regras.verificar(a, visitante)))
+            .toList();
+    }
+
     // ---------- Auxiliares ----------
+
+    private static Pessoa visitante(BuscaRequest req) {
+        return new Pessoa(
+            "visitante",
+            lerObrigatorio(Moradia.class, req.moradia(), "moradia"),
+            req.criancas(),
+            req.animais(),
+            lerObrigatorio(Tempo.class, req.tempo(), "tempo"),
+            req.alergico(),
+            req.iniciante());
+    }
 
     private Animal animal(String nome) {
         return abrigo.animal(nome).orElseThrow(() ->

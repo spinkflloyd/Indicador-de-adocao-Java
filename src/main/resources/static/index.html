@@ -63,6 +63,40 @@ button.acao:hover{background:var(--verde-escuro)}
 .exemplo{background:var(--branco);border:1px solid var(--linha);border-radius:12px;padding:14px 18px;margin-bottom:12px}
 .exemplo h3{font-size:1rem;margin:0 0 6px}
 .exemplo p{margin:2px 0}
+
+.sec{margin-top:36px}
+.analises{margin-top:8px}
+.analise{background:var(--branco);border:1px solid var(--linha);border-radius:12px;margin-bottom:8px}
+.analise.indicado{border-color:var(--verde)}
+.analise summary{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;padding:12px 16px;cursor:pointer;list-style:none}
+.analise summary::-webkit-details-marker{display:none}
+.analise summary::before{content:"▸";color:var(--suave)}
+.analise[open] summary::before{content:"▾"}
+.analise summary strong{font-size:1.1rem;text-transform:capitalize}
+.analise .quem{color:var(--suave);font-size:.9rem}
+.selo{font-size:.85rem;font-weight:600;padding:2px 10px;border-radius:999px;margin-left:auto}
+.selo.ok{background:#D5EEEA;color:var(--verde-escuro)}
+.selo.nao{background:#F6DDD7;color:var(--recusa)}
+.regras{list-style:none;margin:0;padding:4px 16px 14px}
+.regras li{padding:6px 0;border-top:1px solid var(--linha)}
+.regras li::before{display:inline-block;width:1.4em;font-weight:800}
+.regras li.ok::before{content:"✓";color:var(--verde-escuro)}
+.regras li.nao::before{content:"✗";color:var(--recusa)}
+.regras li.nao{color:var(--recusa)}
+.regras strong{margin-right:6px}
+
+.texto{max-width:68ch;color:var(--suave);margin:0 0 20px}
+.regras-grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.regra{background:var(--branco);border:1px solid var(--linha);border-radius:14px;padding:16px 18px}
+.regra .num{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--etiqueta);font-weight:800;margin-bottom:8px}
+.regra h3{margin:0 0 6px;font-size:1.1rem}
+.regra p{margin:0 0 8px}
+.regra .ex{font-size:.92rem;color:var(--suave);border-left:3px solid var(--etiqueta);padding-left:10px;margin:0}
+.tabela-wrap{overflow-x:auto}
+table.niveis{border-collapse:collapse;background:var(--branco);border:1px solid var(--linha);border-radius:10px;overflow:hidden}
+table.niveis th,table.niveis td{padding:9px 16px;text-align:left;border-bottom:1px solid var(--linha)}
+table.niveis th{background:var(--fundo);font-size:.9rem}
+.final{background:var(--branco);border:1px solid var(--linha);border-left:6px solid var(--verde);border-radius:10px;padding:14px 18px;margin-top:28px}
 </style>
 </head>
 <body>
@@ -72,6 +106,7 @@ button.acao:hover{background:var(--verde-escuro)}
 
   <nav role="tablist" aria-label="Seções">
     <button role="tab" data-alvo="buscar" aria-selected="true">Buscar um animal</button>
+    <button role="tab" data-alvo="comofunciona" aria-selected="false">Como funciona</button>
     <button role="tab" data-alvo="abrigo" aria-selected="false">Animais do abrigo</button>
     <button role="tab" data-alvo="perfis" aria-selected="false">Perfis cadastrados</button>
     <button role="tab" data-alvo="destaques" aria-selected="false">Prioridade e saúde</button>
@@ -80,6 +115,7 @@ button.acao:hover{background:var(--verde-escuro)}
   </nav>
 
   <section id="buscar"></section>
+  <section id="comofunciona" hidden></section>
   <section id="abrigo" hidden></section>
   <section id="perfis" hidden></section>
   <section id="destaques" hidden></section>
@@ -179,20 +215,86 @@ function montarBuscar(alvo) {
       alergico: d.alergia === 'sim', iniciante: d.experiencia === 'nao'
     };
     try {
-      const r = await api('/api/buscar', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpo)
-      });
+      const pedido = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpo) };
+      const [r, analise] = await Promise.all([api('/api/buscar', pedido), api('/api/checklist', pedido)]);
       const texto = {
         INDICADOS: 'Animais indicados para você:',
         SO_COMPATIVEIS: 'Nenhum animal com essa espécie ou raça é compatível com o seu perfil. Mas estes outros combinam com você:',
         NENHUM: 'Nenhum animal do abrigo é compatível com o seu perfil no momento.'
       }[r.situacao];
-      resultado.replaceChildren(h('p', { class: 'msg' }, texto), r.animais.length ? grade(r.animais) : null);
+      resultado.replaceChildren(
+        h('p', { class: 'msg' }, texto),
+        r.animais.length ? grade(r.animais) : null,
+        h('h2', { class: 'sec' }, 'Análise de todos os animais'),
+        h('p', { class: 'texto' }, 'Clique em um animal para ver como ele se saiu em cada uma das 7 regras com o seu perfil.'),
+        painelAnalise(analise));
     } catch (e) { resultado.replaceChildren(erro(e)); }
   });
 
   alvo.append(form, resultado);
   carregarRacas();
+}
+
+// ---------- checklist de regras por animal ----------
+const maiuscula = s => s.charAt(0).toUpperCase() + s.slice(1);
+
+function painelAnalise(lista) {
+  const ordenada = [...lista].sort((x, y) => Number(y.recomendado) - Number(x.recomendado));
+  return h('div', { class: 'analises' }, ordenada.map(x => {
+    const falhas = x.verificacoes.filter(v => !v.ok).length;
+    const veredito = x.recomendado
+      ? 'indicado'
+      : `não indicado (${falhas} ${falhas === 1 ? 'regra falhou' : 'regras falharam'})`;
+    return h('details', { class: 'analise' + (x.recomendado ? ' indicado' : '') },
+      h('summary', {},
+        h('strong', {}, x.animal.nome),
+        h('span', { class: 'quem' }, `${x.animal.especie}, ${bonito(x.animal.raca)}`),
+        h('span', { class: 'selo ' + (x.recomendado ? 'ok' : 'nao') }, veredito)),
+      h('ul', { class: 'regras' }, x.verificacoes.map(v =>
+        h('li', { class: v.ok ? 'ok' : 'nao' }, h('strong', {}, v.regra), maiuscula(v.detalhe)))));
+  }));
+}
+
+// ---------- Como funciona ----------
+function montarComoFunciona(alvo) {
+  const regras = [
+    ['Espaço', 'O nível da moradia precisa ser maior ou igual ao nível de porte do animal.',
+      'Rex é de porte grande (nível 3) e o apartamento da Ana é nível 1. Como 1 é menor que 3, ele não cabe.'],
+    ['Tempo livre', 'O nível de tempo livre da pessoa precisa ser maior ou igual ao nível de energia do animal.',
+      'Mel tem energia média (nível 2): serve para quem tem tempo médio ou muito, mas não para quem tem pouco.'],
+    ['Crianças', 'Se há crianças em casa, o animal precisa conviver bem com elas.',
+      'Thor não convive bem com crianças, então não é indicado para a Carla.'],
+    ['Outros animais', 'Se há outros animais em casa, o animal precisa conviver bem com eles.',
+      'Rex não convive bem com outros animais, então não é indicado para o Bruno, que já tem animais.'],
+    ['Alergia', 'Quem tem alergia a pelos só pode receber um animal hipoalergênico.',
+      'Para o Diego, que é alérgico, só Thor e Luna são hipoalergênicos.'],
+    ['Experiência', 'Quem nunca teve animais não recebe um animal de energia alta.',
+      'Para o Diego, que seria o primeiro tutor, Rex, Mimi e Bob ficam de fora.'],
+    ['Vacinação', 'O animal precisa estar vacinado.',
+      'Bob ainda não foi vacinado, então não é indicado para ninguém por enquanto.']
+  ];
+  const niveis = [
+    ['1', 'apartamento', 'pequeno', 'pouco', 'baixa'],
+    ['2', 'casa pequena', 'médio', 'médio', 'média'],
+    ['3', 'casa com quintal', 'grande', 'muito', 'alta']
+  ];
+  alvo.append(
+    h('h2', {}, 'Como o sistema decide'),
+    h('p', { class: 'texto' },
+      'Cada animal é conferido contra o seu perfil por 7 regras. Se passar em todas, ele é indicado. ' +
+      'Se falhar em alguma, o site diz exatamente qual, e é isso que aparece no checklist da busca e na aba "Por que não?".'),
+    h('div', { class: 'regras-grade' }, regras.map(([titulo, texto, exemplo], i) =>
+      h('article', { class: 'regra' },
+        h('span', { class: 'num' }, String(i + 1)),
+        h('h3', {}, titulo), h('p', {}, texto), h('p', { class: 'ex' }, exemplo)))),
+    h('h2', { class: 'sec' }, 'Os níveis'),
+    h('p', { class: 'texto' }, 'As regras de espaço e de tempo livre comparam números: quanto maior o nível, mais a casa ou a pessoa oferece.'),
+    h('div', { class: 'tabela-wrap' }, h('table', { class: 'niveis' },
+      h('thead', {}, h('tr', {}, ['Nível', 'Moradia', 'Porte do animal', 'Tempo livre', 'Energia do animal'].map(c => h('th', {}, c)))),
+      h('tbody', {}, niveis.map(l => h('tr', {}, l.map(c => h('td', {}, c))))))),
+    h('div', { class: 'final' },
+      h('strong', {}, 'Resultado final: '),
+      'um animal é indicado quando passa nas 7 regras ao mesmo tempo. Basta uma falhar para ele não ser indicado.'));
 }
 
 // ---------- Animais do abrigo ----------
@@ -260,7 +362,7 @@ async function montarExemplos(alvo) {
   try {
     const exemplos = await api('/api/exemplos');
     alvo.append(h('h2', {}, 'Consultas de exemplo'),
-            ...exemplos.map((x, i) => h('article', { class: 'exemplo' },
+      ...exemplos.map((x, i) => h('article', { class: 'exemplo' },
         h('h3', {}, `${i + 1}. ${x.pergunta}`),
         x.resultado.map(l => h('p', {}, l.trim())))));
   } catch (e) { alvo.append(erro(e)); }
@@ -268,7 +370,7 @@ async function montarExemplos(alvo) {
 
 // ---------- abas ----------
 const montadores = {
-  buscar: montarBuscar, abrigo: montarAbrigo, perfis: montarPerfis,
+  buscar: montarBuscar, comofunciona: montarComoFunciona, abrigo: montarAbrigo, perfis: montarPerfis,
   destaques: montarDestaques, explicar: montarExplicar, exemplos: montarExemplos
 };
 const montadas = new Set();

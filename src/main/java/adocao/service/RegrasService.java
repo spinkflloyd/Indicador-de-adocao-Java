@@ -107,24 +107,51 @@ public class RegrasService {
 
     // ---------- Regra 12: explicação ----------
 
+    /**
+     * Confere as 7 condições de recomendado/2 uma a uma, na mesma ordem do Prolog,
+     * dizendo se cada uma passou e por quê. Serve de base para a explicação e para o checklist da página.
+     */
+    public List<Verificacao> verificar(Animal a, Pessoa p) {
+        List<Verificacao> v = new ArrayList<>();
+
+        boolean espaco = cabeNoEspaco(a, p);
+        v.add(new Verificacao("Espaço", espaco, espaco
+            ? "porte " + a.porte() + " cabe em " + p.moradia()
+            : "porte " + a.porte() + " nao cabe em " + p.moradia()));
+
+        boolean tempo = tempoAdequado(a, p);
+        v.add(new Verificacao("Tempo livre", tempo, tempo
+            ? "energia " + a.energia() + " combina com tempo livre " + p.tempo()
+            : "energia " + a.energia() + " exige mais tempo livre do que " + p.tempo()));
+
+        boolean criancas = compativelCriancas(a, p);
+        v.add(new Verificacao("Crianças", criancas, !criancas
+            ? "nao convive bem com criancas"
+            : p.criancas() ? "convive bem com criancas" : "nao ha criancas em casa"));
+
+        boolean animais = compativelAnimais(a, p);
+        v.add(new Verificacao("Outros animais", animais, !animais
+            ? "nao convive bem com outros animais"
+            : p.animais() ? "convive bem com outros animais" : "nao ha outros animais em casa"));
+
+        boolean alergia = alergiaOk(a, p);
+        v.add(new Verificacao("Alergia", alergia, !alergia
+            ? "a pessoa e alergica e o animal nao e hipoalergenico"
+            : p.alergico() ? "o animal e hipoalergenico" : "ninguem e alergico"));
+
+        boolean experiencia = experienciaAdequada(a, p);
+        v.add(new Verificacao("Experiência", experiencia, !experiencia
+            ? "animal de energia alta nao e indicado para iniciante"
+            : p.iniciante() ? "energia " + a.energia() + " e adequada para iniciante" : "a pessoa ja tem experiencia"));
+
+        v.add(new Verificacao("Vacinação", a.vacinado(),
+            a.vacinado() ? "esta vacinado" : "nao esta vacinado"));
+        return v;
+    }
+
     /** motivo_recusa/3: um motivo para cada condição de recomendado/2 que falha. */
     public List<String> motivosRecusa(Animal a, Pessoa p) {
-        List<String> motivos = new ArrayList<>();
-        if (!cabeNoEspaco(a, p))
-            motivos.add("porte " + a.porte() + " nao cabe em " + p.moradia());
-        if (!tempoAdequado(a, p))
-            motivos.add("energia " + a.energia() + " exige mais tempo livre do que " + p.tempo());
-        if (!compativelCriancas(a, p))
-            motivos.add("nao convive bem com criancas");
-        if (!compativelAnimais(a, p))
-            motivos.add("nao convive bem com outros animais");
-        if (!alergiaOk(a, p))
-            motivos.add("a pessoa e alergica e o animal nao e hipoalergenico");
-        if (!experienciaAdequada(a, p))
-            motivos.add("animal de energia alta nao e indicado para iniciante");
-        if (!a.vacinado())
-            motivos.add("nao esta vacinado");
-        return motivos;
+        return verificar(a, p).stream().filter(x -> !x.ok()).map(Verificacao::detalhe).toList();
     }
 
     /** 12. explicar/2: confirma a recomendação ou lista os motivos da recusa. */

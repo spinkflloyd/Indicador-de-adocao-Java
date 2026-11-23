@@ -2,6 +2,7 @@ package adocao.web;
 
 import adocao.model.Animal;
 import adocao.model.Pessoa;
+import adocao.service.Verificacao;
 
 import java.util.List;
 
@@ -34,4 +35,7 @@ public final class Dtos {
                                boolean animais, String tempo, boolean alergico, boolean iniciante) {}
 
     public record BuscaResponse(String situacao, List<AnimalDto> animais) {}
+
+    /** Um animal analisado para o perfil informado: veredito geral e resultado de cada regra. */
+    public record AnaliseDto(AnimalDto animal, boolean recomendado, List<Verificacao> verificacoes) {}
 }

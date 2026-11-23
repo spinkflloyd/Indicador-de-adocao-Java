@@ -134,4 +134,31 @@ class RegrasServiceTest {
     void geraOsNoveExemplos() {
         assertEquals(9, regras.exemplos().size());
     }
+
+    @Test
+    void checklistTemSempreAsSeteRegras() {
+        assertEquals(7, regras.verificar(animal("rex"), pessoa("ana")).size());
+    }
+
+    @Test
+    void checklistDoRexParaAnaFalhaEmEspacoETempo() {
+        List<String> falhas = regras.verificar(animal("rex"), pessoa("ana")).stream()
+            .filter(v -> !v.ok()).map(Verificacao::regra).toList();
+        assertEquals(List.of("Espaço", "Tempo livre"), falhas);
+    }
+
+    @Test
+    void checklistDoSimbaParaAnaPassaEmTudo() {
+        assertTrue(regras.verificar(animal("simba"), pessoa("ana")).stream().allMatch(Verificacao::ok));
+    }
+
+    @Test
+    void recomendadoEquivaleATodasAsRegrasPassarem() {
+        for (Pessoa p : abrigo.pessoas()) {
+            for (Animal a : abrigo.animais()) {
+                boolean todasPassam = regras.verificar(a, p).stream().allMatch(Verificacao::ok);
+                assertEquals(regras.recomendado(a, p), todasPassam, a.nome() + " para " + p.nome());
+            }
+        }
+    }
 }
