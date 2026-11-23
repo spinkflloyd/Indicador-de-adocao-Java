@@ -1,0 +1,8 @@
+Fotos dos animais
+-----------------
+Uma foto por animal, com o nome do animal em minúsculas:
+
+  rex.jpg   mel.jpg   thor.jpg   luna.jpg   mimi.jpg   bob.jpg   nina.jpg   simba.jpg
+
+Formatos aceitos: .jpg, .png ou .webp. O cartão mostra a foto em formato quadrado, com foco na parte de cima.
+Animal sem foto aparece com uma ilustração no lugar.
