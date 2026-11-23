@@ -1,7 +1,5 @@
 package adocao;
 
-import adocao.service.Abrigo;
-import adocao.service.Interesses;
 import adocao.service.RegrasService;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -14,19 +12,9 @@ public class AdocaoApplication {
         SpringApplication.run(AdocaoApplication.class, args);
     }
 
-    // O modelo e as regras são Java puro (sem anotações do Spring); aqui só os registramos.
+    // As regras continuam em Java puro; os cadastros agora vêm do PostgreSQL.
     @Bean
-    Abrigo abrigo() {
-        return new Abrigo();
-    }
-
-    @Bean
-    Interesses interesses() {
-        return new Interesses();
-    }
-
-    @Bean
-    RegrasService regrasService(Abrigo abrigo) {
+    RegrasService regrasService(adocao.service.Abrigo abrigo) {
         return new RegrasService(abrigo);
     }
 }
