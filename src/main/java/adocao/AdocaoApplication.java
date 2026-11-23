@@ -1,6 +1,7 @@
 package adocao;
 
 import adocao.service.Abrigo;
+import adocao.service.Interesses;
 import adocao.service.RegrasService;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -17,6 +18,11 @@ public class AdocaoApplication {
     @Bean
     Abrigo abrigo() {
         return new Abrigo();
+    }
+
+    @Bean
+    Interesses interesses() {
+        return new Interesses();
     }
 
     @Bean

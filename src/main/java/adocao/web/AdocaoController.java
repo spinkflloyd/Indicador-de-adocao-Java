@@ -9,13 +9,18 @@ import adocao.service.Abrigo;
 import adocao.service.Dupla;
 import adocao.service.Exemplo;
 import adocao.service.Explicacao;
+import adocao.service.Interesse;
+import adocao.service.Interesses;
 import adocao.service.RegrasService;
 import adocao.service.ResultadoBusca;
 import adocao.web.Dtos.AnaliseDto;
 import adocao.web.Dtos.AnimalDto;
 import adocao.web.Dtos.BuscaRequest;
 import adocao.web.Dtos.BuscaResponse;
+import adocao.web.Dtos.InteresseRequest;
+import adocao.web.Dtos.MensagemDto;
 import adocao.web.Dtos.PessoaDto;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -23,9 +28,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.time.Instant;
 import java.util.List;
 
 @RestController
@@ -34,10 +43,15 @@ public class AdocaoController {
 
     private final Abrigo abrigo;
     private final RegrasService regras;
+    private final Interesses interesses;
+    private final String chaveAdmin;
 
-    public AdocaoController(Abrigo abrigo, RegrasService regras) {
+    public AdocaoController(Abrigo abrigo, RegrasService regras, Interesses interesses,
+                            @Value("${adocao.chave-admin:}") String chaveAdmin) {
         this.abrigo = abrigo;
         this.regras = regras;
+        this.interesses = interesses;
+        this.chaveAdmin = chaveAdmin;
     }
 
     // ---------- Consultas ----------
@@ -58,6 +72,12 @@ public class AdocaoController {
     @GetMapping("/animais/saude")
     public List<AnimalDto> saude() {
         return regras.precisaAtencaoSaude().stream().map(AnimalDto::de).toList();
+    }
+
+    /** findall(P, recomendado(A, P), L): para quem o animal é recomendado (usado na comparação). */
+    @GetMapping("/animais/{nome}/recomendado-para")
+    public List<String> recomendadoPara(@PathVariable String nome) {
+        return regras.pessoasParaQuem(animal(nome)).stream().map(Pessoa::nome).toList();
     }
 
     /** Raças da espécie (ou de todas, se a espécie for omitida ou "qualquer"). */
@@ -102,6 +122,37 @@ public class AdocaoController {
         return regras.exemplos();
     }
 
+    // ---------- Tenho interesse ----------
+
+    /** Formulário de contato dos cartões. Os pedidos ficam em memória (sem banco de dados). */
+    @PostMapping("/interesses")
+    @ResponseStatus(HttpStatus.CREATED)
+    public MensagemDto registrarInteresse(@RequestBody InteresseRequest req) {
+        Animal animal = animal(req.animal());
+        String nome = limpar(req.nome());
+        String contato = limpar(req.contato());
+        String mensagem = limpar(req.mensagem());
+
+        if (nome.isEmpty() || nome.length() > 80)
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Informe seu nome (ate 80 caracteres).");
+        if (contato.isEmpty() || contato.length() > 100)
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Informe um contato (ate 100 caracteres).");
+        if (mensagem.length() > 500)
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A mensagem pode ter no maximo 500 caracteres.");
+
+        interesses.registrar(new Interesse(Instant.now(), animal.nome(), nome, contato, mensagem));
+        return new MensagemDto("Recebemos seu interesse em " + animal.nome() + ".");
+    }
+
+    /** Leitura dos pedidos, protegida pela chave definida em ADOCAO_CHAVE. Sem chave definida, fica desativada. */
+    @GetMapping("/interesses")
+    public List<Interesse> listarInteresses(@RequestParam(required = false) String chave) {
+        boolean liberado = !chaveAdmin.isBlank() && chave != null
+            && MessageDigest.isEqual(chaveAdmin.getBytes(StandardCharsets.UTF_8), chave.getBytes(StandardCharsets.UTF_8));
+        if (!liberado) throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso negado.");
+        return interesses.todos();
+    }
+
     // ---------- Busca (modo interativo) ----------
 
     /** Menu: "Buscar um animal para mim". O perfil do visitante não é guardado. */
@@ -129,6 +180,10 @@ public class AdocaoController {
     }
 
     // ---------- Auxiliares ----------
+
+    private static String limpar(String texto) {
+        return texto == null ? "" : texto.trim();
+    }
 
     private static Pessoa visitante(BuscaRequest req) {
         return new Pessoa(

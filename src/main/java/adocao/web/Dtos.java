@@ -34,6 +34,11 @@ public final class Dtos {
     public record BuscaRequest(String especie, String raca, String moradia, boolean criancas,
                                boolean animais, String tempo, boolean alergico, boolean iniciante) {}
 
+    /** Formulário "Tenho interesse". */
+    public record InteresseRequest(String animal, String nome, String contato, String mensagem) {}
+
+    public record MensagemDto(String mensagem) {}
+
     public record BuscaResponse(String situacao, List<AnimalDto> animais) {}
 
     /** Um animal analisado para o perfil informado: veredito geral e resultado de cada regra. */
