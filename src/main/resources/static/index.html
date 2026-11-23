@@ -97,6 +97,33 @@ table.niveis{border-collapse:collapse;background:var(--branco);border:1px solid 
 table.niveis th,table.niveis td{padding:9px 16px;text-align:left;border-bottom:1px solid var(--linha)}
 table.niveis th{background:var(--fundo);font-size:.9rem}
 .final{background:var(--branco);border:1px solid var(--linha);border-left:6px solid var(--verde);border-radius:10px;padding:14px 18px;margin-top:28px}
+
+.foto{aspect-ratio:1/1;background:var(--fundo);overflow:hidden}
+.foto img,.foto svg{display:block;width:100%;height:100%;object-fit:cover;object-position:50% 20%}
+.interesse-btn{margin-top:12px;width:100%;font:600 .95rem var(--fonte);color:var(--verde-escuro);background:var(--branco);border:2px solid var(--verde);border-radius:8px;padding:8px 12px;cursor:pointer}
+.interesse-btn:hover{background:var(--verde);color:#fff}
+
+input[type=search],input[type=text],textarea{font:400 1rem var(--fonte);padding:9px 10px;border:1px solid var(--linha);border-radius:8px;background:var(--branco);color:var(--tinta);width:100%}
+textarea{min-height:90px;resize:vertical}
+label.check{display:flex;align-items:center;gap:8px;font-weight:600}
+label.check input{width:18px;height:18px}
+button.leve{font:600 .95rem var(--fonte);background:none;border:0;color:var(--suave);text-decoration:underline;cursor:pointer;padding:11px 8px}
+.acoes{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.filtros{margin-bottom:12px}
+
+table.comparar{border-collapse:collapse;background:var(--branco);border:1px solid var(--linha);width:100%;min-width:520px}
+table.comparar th,table.comparar td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--linha);vertical-align:top}
+table.comparar thead th{text-align:center;width:36%}
+table.comparar thead th .foto{width:180px;max-width:100%;margin:0 auto 8px;border-radius:10px}
+table.comparar thead h3{margin:0;text-transform:capitalize;font-size:1.3rem}
+table.comparar tbody th{width:28%;font-weight:600;color:var(--suave)}
+table.comparar tr.dif td{background:#FFF4D6;font-weight:600}
+
+dialog.interesse{border:0;border-radius:14px;padding:22px;width:min(440px,calc(100% - 32px));color:var(--tinta);font-family:var(--fonte)}
+dialog.interesse::backdrop{background:rgba(20,38,43,.55)}
+dialog.interesse h2{margin:0 0 4px;text-transform:none}
+dialog.interesse form{display:grid;gap:14px;margin-top:12px}
+dialog.interesse .sub{margin:0;color:var(--suave)}
 </style>
 </head>
 <body>
@@ -108,6 +135,7 @@ table.niveis th{background:var(--fundo);font-size:.9rem}
     <button role="tab" data-alvo="buscar" aria-selected="true">Buscar um animal</button>
     <button role="tab" data-alvo="comofunciona" aria-selected="false">Como funciona</button>
     <button role="tab" data-alvo="abrigo" aria-selected="false">Animais do abrigo</button>
+    <button role="tab" data-alvo="comparar" aria-selected="false">Comparar animais</button>
     <button role="tab" data-alvo="perfis" aria-selected="false">Perfis cadastrados</button>
     <button role="tab" data-alvo="destaques" aria-selected="false">Prioridade e saúde</button>
     <button role="tab" data-alvo="explicar" aria-selected="false">Por que não?</button>
@@ -117,6 +145,7 @@ table.niveis th{background:var(--fundo);font-size:.9rem}
   <section id="buscar"></section>
   <section id="comofunciona" hidden></section>
   <section id="abrigo" hidden></section>
+  <section id="comparar" hidden></section>
   <section id="perfis" hidden></section>
   <section id="destaques" hidden></section>
   <section id="explicar" hidden></section>
@@ -152,21 +181,126 @@ async function api(url, opcoes) {
 }
 function erro(e) { return h('p', { class: 'erro', role: 'alert' }, e.message); }
 
+// ---------- foto ou ilustração do animal ----------
+const ROTULOS = { medio: 'médio', media: 'média' };
+const rot = s => ROTULOS[s] || s;
+
+const PALETAS = [
+  ['#C98E5B', '#9A6538', '#F2DDC2'], ['#E7D3B5', '#C4A77C', '#FFF6E6'], ['#6F7A82', '#4B545A', '#C9D0D4'],
+  ['#D9A441', '#A8761B', '#F7E3B0'], ['#EDEDEA', '#BDBDB6', '#FFFFFF'], ['#4A4A4A', '#2B2B2B', '#8E8E8E']
+];
+
+function avatar(a) {
+  let soma = 0;
+  for (const c of a.nome) soma += c.charCodeAt(0);
+  const [pelo, escuro, claro] = PALETAS[soma % PALETAS.length];
+  const olhos = '<circle cx="82" cy="70" r="5" fill="#1d1d1d"/><circle cx="118" cy="70" r="5" fill="#1d1d1d"/>';
+  const desenhos = {
+    cachorro:
+      `<ellipse cx="56" cy="72" rx="21" ry="38" fill="${escuro}" transform="rotate(14 56 72)"/>
+       <ellipse cx="144" cy="72" rx="21" ry="38" fill="${escuro}" transform="rotate(-14 144 72)"/>
+       <circle cx="100" cy="80" r="46" fill="${pelo}"/>
+       <ellipse cx="100" cy="100" rx="23" ry="17" fill="${claro}"/>${olhos}
+       <ellipse cx="100" cy="91" rx="8" ry="6" fill="#1d1d1d"/>
+       <path d="M100 97v7M100 104q-8 8-16 2M100 104q8 8 16 2" stroke="#1d1d1d" stroke-width="2.5" fill="none" stroke-linecap="round"/>`,
+    gato:
+      `<polygon points="56,64 60,16 98,44" fill="${pelo}"/><polygon points="144,64 140,16 102,44" fill="${pelo}"/>
+       <polygon points="66,54 68,30 88,44" fill="#F3B7B7"/><polygon points="134,54 132,30 112,44" fill="#F3B7B7"/>
+       <ellipse cx="100" cy="84" rx="47" ry="41" fill="${pelo}"/>
+       <ellipse cx="82" cy="76" rx="6" ry="8" fill="#9BD07A"/><ellipse cx="118" cy="76" rx="6" ry="8" fill="#9BD07A"/>
+       <ellipse cx="82" cy="76" rx="2" ry="7" fill="#1d1d1d"/><ellipse cx="118" cy="76" rx="2" ry="7" fill="#1d1d1d"/>
+       <polygon points="94,92 106,92 100,99" fill="#E58C8C"/>
+       <path d="M100 99q-6 8-13 4M100 99q6 8 13 4" stroke="#1d1d1d" stroke-width="2" fill="none" stroke-linecap="round"/>
+       <path d="M62 92l-24-4M62 100l-24 4M138 92l24-4M138 100l24 4" stroke="${escuro}" stroke-width="2" stroke-linecap="round"/>`,
+    coelho:
+      `<ellipse cx="78" cy="38" rx="14" ry="38" fill="${pelo}"/><ellipse cx="122" cy="38" rx="14" ry="38" fill="${pelo}"/>
+       <ellipse cx="78" cy="40" rx="6" ry="28" fill="#F3B7B7"/><ellipse cx="122" cy="40" rx="6" ry="28" fill="#F3B7B7"/>
+       <circle cx="100" cy="94" r="40" fill="${pelo}"/>
+       <ellipse cx="100" cy="106" rx="19" ry="14" fill="${claro}"/>
+       <circle cx="84" cy="86" r="5" fill="#1d1d1d"/><circle cx="116" cy="86" r="5" fill="#1d1d1d"/>
+       <ellipse cx="100" cy="98" rx="5" ry="4" fill="#E58C8C"/>
+       <path d="M100 102v5M100 107q-6 6-12 2M100 107q6 6 12 2" stroke="#1d1d1d" stroke-width="2" fill="none" stroke-linecap="round"/>
+       <rect x="96" y="108" width="8" height="8" rx="2" fill="#fff" stroke="#bbb"/>`
+  };
+  const caixa = document.createElement('div');
+  caixa.innerHTML = `<svg viewBox="0 0 200 150" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Ilustração de ${a.especie}" xmlns="http://www.w3.org/2000/svg">
+    <rect width="200" height="150" fill="#DCE9E6"/>${desenhos[a.especie] || desenhos.cachorro}</svg>`;
+  return caixa.firstElementChild;
+}
+
+// Usa /fotos/<nome>.jpg (ou .png, .webp) se existir; senão mostra a ilustração.
+function foto(a) {
+  const extensoes = ['jpg', 'png', 'webp'];
+  let i = 0;
+  const caixa = h('div', { class: 'foto' });
+  const img = h('img', { alt: `Foto de ${a.nome}`, loading: 'lazy', src: `/fotos/${a.nome}.${extensoes[0]}` });
+  img.addEventListener('error', () => {
+    i++;
+    if (i < extensoes.length) img.src = `/fotos/${a.nome}.${extensoes[i]}`;
+    else caixa.replaceChildren(avatar(a));
+  });
+  caixa.append(img);
+  return caixa;
+}
+
 // ---------- cartão do animal (etiqueta de coleira) ----------
 function sinal(ok, sim, nao) { return h('li', { class: ok ? 'ok' : 'nao' }, ok ? sim : nao); }
 function cartao(a) {
   return h('article', { class: 'tag' },
     h('header', {}, h('h3', {}, a.nome), h('p', { class: 'sub' }, `${a.especie}, ${bonito(a.raca)}`)),
+    foto(a),
     h('div', { class: 'corpo' },
       h('ul', { class: 'fatos' },
-        h('li', {}, `porte ${a.porte}`), h('li', {}, a.faixaEtaria), h('li', {}, `energia ${a.energia}`)),
+        h('li', {}, `porte ${rot(a.porte)}`), h('li', {}, a.faixaEtaria), h('li', {}, `energia ${rot(a.energia)}`)),
       h('ul', { class: 'sinais' },
         sinal(a.vacinado, 'vacinado', 'não vacinado'),
         sinal(a.sociavelCriancas, 'convive bem com crianças', 'não convive com crianças'),
         sinal(a.sociavelAnimais, 'convive bem com outros animais', 'não convive com outros animais'),
-        a.hipoalergenico ? sinal(true, 'hipoalergênico') : null)));
+        a.hipoalergenico ? sinal(true, 'hipoalergênico') : null),
+      h('button', { class: 'interesse-btn', type: 'button', onclick: () => abrirInteresse(a) }, 'Tenho interesse')));
 }
 const grade = animais => h('div', { class: 'grade' }, animais.map(cartao));
+
+// ---------- Tenho interesse ----------
+let dialogo = null;
+function abrirInteresse(a) {
+  if (!dialogo) { dialogo = h('dialog', { class: 'interesse' }); document.body.append(dialogo); }
+  const aviso = h('p', { class: 'erro', role: 'alert' });
+  const nome = h('input', { type: 'text', name: 'nome', required: '', maxlength: '80', autocomplete: 'name' });
+  const contato = h('input', { type: 'text', name: 'contato', required: '', maxlength: '100',
+    placeholder: 'WhatsApp, telefone ou e-mail' });
+  const msg = h('textarea', { name: 'mensagem', maxlength: '500',
+    placeholder: 'Conte um pouco sobre você e sua casa (opcional)' });
+
+  const form = h('form', {},
+    h('label', {}, 'Seu nome', nome),
+    h('label', {}, 'Como podemos falar com você?', contato),
+    h('label', {}, 'Mensagem', msg),
+    aviso,
+    h('div', { class: 'acoes' },
+      h('button', { class: 'acao', type: 'submit' }, 'Enviar'),
+      h('button', { class: 'leve', type: 'button', onclick: () => dialogo.close() }, 'Cancelar')));
+
+  form.addEventListener('submit', async ev => {
+    ev.preventDefault();
+    try {
+      const r = await api('/api/interesses', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ animal: a.nome, nome: nome.value, contato: contato.value, mensagem: msg.value })
+      });
+      dialogo.replaceChildren(
+        h('h2', {}, 'Pedido enviado'),
+        h('p', {}, r.mensagem + ' Entraremos em contato pelo que você informou.'),
+        h('div', { class: 'acoes' }, h('button', { class: 'acao', type: 'button', onclick: () => dialogo.close() }, 'Fechar')));
+    } catch (e) { aviso.textContent = e.message; }
+  });
+
+  dialogo.replaceChildren(
+    h('h2', {}, `Tenho interesse em ${a.nome}`),
+    h('p', { class: 'sub' }, 'Deixe seus dados e entraremos em contato.'),
+    form);
+  dialogo.showModal();
+}
 
 // ---------- campos de formulário ----------
 function campo(rotulo, nome, opcoes) {
@@ -297,10 +431,121 @@ function montarComoFunciona(alvo) {
       'um animal é indicado quando passa nas 7 regras ao mesmo tempo. Basta uma falhar para ele não ser indicado.'));
 }
 
-// ---------- Animais do abrigo ----------
+// ---------- Animais do abrigo (busca, filtros e ordenação) ----------
+const ORDEM = {
+  faixaEtaria: { filhote: 1, adulto: 2, idoso: 3 },
+  porte: { pequeno: 1, medio: 2, grande: 3 },
+  energia: { baixa: 1, media: 2, alta: 3 }
+};
+const semAcento = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+const seletor = (nome, opcoes) => h('select', { name: nome }, opcoes.map(([v, t]) => h('option', { value: v }, t)));
+const comRotulo = (texto, el) => h('label', {}, texto, el);
+
 async function montarAbrigo(alvo) {
-  try { alvo.append(h('h2', {}, 'Animais do abrigo'), grade(await api('/api/animais'))); }
-  catch (e) { alvo.append(erro(e)); }
+  try {
+    const todos = await api('/api/animais');
+    const busca = h('input', { type: 'search', name: 'q', placeholder: 'Nome, raça ou espécie' });
+    const especie = seletor('especie', [['todas', 'Todas'], ['cachorro', 'Cachorro'], ['gato', 'Gato'], ['coelho', 'Coelho']]);
+    const porte = seletor('porte', [['todos', 'Todos'], ['pequeno', 'Pequeno'], ['medio', 'Médio'], ['grande', 'Grande']]);
+    const idade = seletor('idade', [['todas', 'Todas'], ['filhote', 'Filhote'], ['adulto', 'Adulto'], ['idoso', 'Idoso']]);
+    const ordem = seletor('ordem', [
+      ['nome:asc', 'Nome (A a Z)'],
+      ['faixaEtaria:asc', 'Idade: filhotes primeiro'], ['faixaEtaria:desc', 'Idade: idosos primeiro'],
+      ['porte:asc', 'Porte: menor para maior'], ['porte:desc', 'Porte: maior para menor'],
+      ['energia:asc', 'Energia: menor para maior'], ['energia:desc', 'Energia: maior para menor']]);
+    const vacinados = h('input', { type: 'checkbox', name: 'vacinados' });
+
+    const contagem = h('p', { class: 'texto', role: 'status' });
+    const lista = h('div');
+
+    function atualizar() {
+      const q = semAcento(busca.value.trim());
+      const [campo, sentido] = ordem.value.split(':');
+      const resultado = todos
+        .filter(a => !q || semAcento(`${a.nome} ${a.raca.replaceAll('_', ' ')} ${a.especie}`).includes(q))
+        .filter(a => especie.value === 'todas' || a.especie === especie.value)
+        .filter(a => porte.value === 'todos' || a.porte === porte.value)
+        .filter(a => idade.value === 'todas' || a.faixaEtaria === idade.value)
+        .filter(a => !vacinados.checked || a.vacinado)
+        .sort((x, y) => {
+          const dif = campo === 'nome' ? 0 : ORDEM[campo][x[campo]] - ORDEM[campo][y[campo]];
+          return (sentido === 'desc' ? -dif : dif) || x.nome.localeCompare(y.nome, 'pt');
+        });
+      contagem.textContent = `Mostrando ${resultado.length} de ${todos.length} animais`;
+      lista.replaceChildren(resultado.length
+        ? grade(resultado)
+        : h('p', { class: 'vazio' }, 'Nenhum animal encontrado com esses filtros.'));
+    }
+
+    const form = h('form', { class: 'painel filtros' },
+      comRotulo('Buscar', busca), comRotulo('Espécie', especie), comRotulo('Porte', porte),
+      comRotulo('Idade', idade), comRotulo('Ordenar por', ordem),
+      h('div', { class: 'acoes' },
+        h('label', { class: 'check' }, vacinados, 'Somente vacinados'),
+        h('button', { class: 'leve', type: 'reset' }, 'Limpar filtros')));
+    form.addEventListener('input', atualizar);
+    form.addEventListener('reset', () => setTimeout(atualizar));
+    form.addEventListener('submit', ev => ev.preventDefault());
+
+    alvo.append(h('h2', {}, 'Animais do abrigo'), form, contagem, lista);
+    atualizar();
+  } catch (e) { alvo.append(erro(e)); }
+}
+
+// ---------- Comparar animais ----------
+async function montarComparar(alvo) {
+  try {
+    const animais = await api('/api/animais');
+    const opcoes = animais.map(a => h('option', { value: a.nome }, a.nome));
+    const selA = h('select', { name: 'a' }, opcoes.map(o => o.cloneNode(true)));
+    const selB = h('select', { name: 'b' }, opcoes.map(o => o.cloneNode(true)));
+    const tem = n => animais.some(a => a.nome === n);
+    selA.value = tem('luna') ? 'luna' : animais[0].nome;
+    selB.value = tem('simba') ? 'simba' : animais[Math.min(1, animais.length - 1)].nome;
+
+    const resultado = h('div', { 'aria-live': 'polite' });
+    const simNao = ok => (ok ? '✓ sim' : '✗ não');
+    const linhas = [
+      ['Espécie', a => a.especie],
+      ['Raça', a => bonito(a.raca)],
+      ['Porte', a => rot(a.porte)],
+      ['Faixa etária', a => a.faixaEtaria],
+      ['Energia', a => rot(a.energia)],
+      ['Vacinado', a => simNao(a.vacinado)],
+      ['Convive com crianças', a => simNao(a.sociavelCriancas)],
+      ['Convive com outros animais', a => simNao(a.sociavelAnimais)],
+      ['Hipoalergênico', a => simNao(a.hipoalergenico)]
+    ];
+
+    async function comparar() {
+      const a = animais.find(x => x.nome === selA.value);
+      const b = animais.find(x => x.nome === selB.value);
+      try {
+        const [paraA, paraB] = await Promise.all([
+          api(`/api/animais/${a.nome}/recomendado-para`), api(`/api/animais/${b.nome}/recomendado-para`)]);
+        const textoPara = l => (l.length ? l.join(', ') : 'ninguém');
+        const corpo = linhas.map(([nome, f]) => [nome, f(a), f(b)]);
+        corpo.push(['Recomendado para', textoPara(paraA), textoPara(paraB)]);
+        resultado.replaceChildren(
+          h('div', { class: 'tabela-wrap' }, h('table', { class: 'comparar' },
+            h('thead', {}, h('tr', {}, h('th', {}),
+              [a, b].map(x => h('th', {}, foto(x), h('h3', {}, x.nome),
+                h('button', { class: 'interesse-btn', type: 'button', onclick: () => abrirInteresse(x) }, 'Tenho interesse')))),
+            ),
+            h('tbody', {}, corpo.map(([nome, va, vb]) =>
+              h('tr', { class: va !== vb ? 'dif' : '' }, h('th', { scope: 'row' }, nome), h('td', {}, va), h('td', {}, vb)))))),
+          h('p', { class: 'texto' }, 'As linhas em destaque são as que diferem entre os dois animais.'));
+      } catch (e) { resultado.replaceChildren(erro(e)); }
+    }
+
+    const form = h('form', { class: 'painel filtros' },
+      comRotulo('Primeiro animal', selA), comRotulo('Segundo animal', selB));
+    form.addEventListener('input', comparar);
+    form.addEventListener('submit', ev => ev.preventDefault());
+
+    alvo.append(h('h2', {}, 'Comparar animais'), form, resultado);
+    comparar();
+  } catch (e) { alvo.append(erro(e)); }
 }
 
 // ---------- Perfis cadastrados ----------
@@ -370,7 +615,7 @@ async function montarExemplos(alvo) {
 
 // ---------- abas ----------
 const montadores = {
-  buscar: montarBuscar, comofunciona: montarComoFunciona, abrigo: montarAbrigo, perfis: montarPerfis,
+  buscar: montarBuscar, comofunciona: montarComoFunciona, abrigo: montarAbrigo, comparar: montarComparar, perfis: montarPerfis,
   destaques: montarDestaques, explicar: montarExplicar, exemplos: montarExemplos
 };
 const montadas = new Set();
