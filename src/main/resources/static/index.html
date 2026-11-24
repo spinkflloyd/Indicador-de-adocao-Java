@@ -20,10 +20,14 @@ h1{font-size:clamp(1.9rem,4.5vw,2.8rem);line-height:1.1;margin:0 0 8px;font-weig
 .intro{margin:0 0 24px;max-width:58ch;color:var(--suave)}
 h2{font-size:1.25rem;margin:0 0 12px}
 
-nav[role=tablist]{display:flex;flex-wrap:wrap;gap:4px 20px;border-bottom:2px solid var(--linha);margin-bottom:24px}
-nav button{font:600 .95rem var(--fonte);color:var(--suave);background:none;border:0;padding:10px 0;margin-bottom:-2px;border-bottom:3px solid transparent;cursor:pointer}
-nav button[aria-selected=true]{color:var(--verde-escuro);border-bottom-color:var(--etiqueta)}
-nav button:hover{color:var(--tinta)}
+nav[role=tablist]{display:flex;flex-wrap:wrap;gap:8px;margin:28px 0 22px;padding:10px;background:rgba(255,255,255,.62);border:1px solid var(--linha);border-radius:16px;box-shadow:0 8px 24px rgba(20,38,43,.045)}
+nav button{font:600 .94rem var(--fonte);color:var(--suave);background:transparent;border:1px solid transparent;border-radius:10px;padding:10px 13px;cursor:pointer;transition:background .22s ease,color .22s ease,transform .22s ease,border-color .22s ease}
+nav button[aria-selected=true]{color:#fff;background:var(--verde);border-color:var(--verde);box-shadow:0 5px 13px rgba(11,107,99,.18)}
+nav button:hover{color:var(--verde-escuro);background:#e2efec;transform:translateY(-1px)}
+nav button[aria-selected=true]:hover{color:#fff;background:var(--verde-escuro)}
+main > section:not([hidden]){animation:abaEntrada .34s cubic-bezier(.2,.7,.25,1) both}
+@keyframes abaEntrada{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}
 :focus-visible{outline:3px solid var(--verde);outline-offset:2px}
 
 form.painel{background:var(--branco);border:1px solid var(--linha);border-radius:14px;padding:20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px 20px;align-items:end}
@@ -102,6 +106,10 @@ table.niveis th{background:var(--fundo);font-size:.9rem}
 .foto img,.foto svg{display:block;width:100%;height:100%;object-fit:cover;object-position:50% 20%}
 .interesse-btn{margin-top:12px;width:100%;font:600 .95rem var(--fonte);color:var(--verde-escuro);background:var(--branco);border:2px solid var(--verde);border-radius:8px;padding:8px 12px;cursor:pointer}
 .interesse-btn:hover{background:var(--verde);color:#fff}
+.botao-anunciar{display:inline-flex;align-items:center;gap:8px;padding:12px 18px;background:var(--verde);color:#fff;text-decoration:none;font-weight:700;border-radius:10px;box-shadow:0 6px 16px rgba(11,107,99,.16);transition:transform .2s ease,background .2s ease,box-shadow .2s ease}
+.botao-anunciar:hover{background:var(--verde-escuro);transform:translateY(-2px);box-shadow:0 9px 20px rgba(11,107,99,.22)}
+.rodape{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:46px;padding-top:18px;border-top:1px solid var(--linha);color:var(--suave);font-size:.9rem}
+.rodape a{color:var(--verde-escuro);font-weight:700}
 
 input[type=search],input[type=text],textarea{font:400 1rem var(--fonte);padding:9px 10px;border:1px solid var(--linha);border-radius:8px;background:var(--branco);color:var(--tinta);width:100%}
 textarea{min-height:90px;resize:vertical}
@@ -130,7 +138,7 @@ dialog.interesse .sub{margin:0;color:var(--suave)}
 <main class="pagina">
   <h1>Indicação de animais para adoção</h1>
   <p class="intro">Conte como é a sua casa e a sua rotina. O sistema indica os animais do abrigo que combinam com você e explica por que um animal não foi indicado.</p>
-  <p class="intro"><a href="/admin.html">Área administrativa</a></p>
+  <p class="intro">Conheça os animais, descubra combinações e ajude um novo amigo a encontrar um lar.</p>
 
   <nav role="tablist" aria-label="Seções">
     <button role="tab" data-alvo="buscar" aria-selected="true">Buscar um animal</button>
@@ -139,6 +147,7 @@ dialog.interesse .sub{margin:0;color:var(--suave)}
     <button role="tab" data-alvo="comparar" aria-selected="false">Comparar animais</button>
     <button role="tab" data-alvo="perfis" aria-selected="false">Perfis cadastrados</button>
     <button role="tab" data-alvo="destaques" aria-selected="false">Prioridade e saúde</button>
+    <button role="tab" data-alvo="anuncios-publicos" aria-selected="false">Anunciar animal</button>
     <button role="tab" data-alvo="explicar" aria-selected="false">Por que não?</button>
     <button role="tab" data-alvo="exemplos" aria-selected="false">Exemplos</button>
   </nav>
@@ -149,8 +158,19 @@ dialog.interesse .sub{margin:0;color:var(--suave)}
   <section id="comparar" hidden></section>
   <section id="perfis" hidden></section>
   <section id="destaques" hidden></section>
+  <section id="anuncios-publicos" hidden>
+    <div class="perfil">
+      <h2>Anuncie um animal para adoção</h2>
+      <p class="texto">Qualquer pessoa pode divulgar um animal que precisa de um lar. Preencha as informações, envie uma foto e o anúncio será publicado automaticamente.</p>
+      <a class="botao-anunciar" href="/anunciar.html">＋ Publicar um anúncio</a>
+    </div>
+    <h2 class="sec">Anúncios da comunidade</h2>
+    <p class="texto">Conheça os animais anunciados por pessoas da comunidade e entre em contato diretamente pelo WhatsApp.</p>
+    <div id="grade-anuncios" class="grade"><p class="vazio">Carregando anúncios...</p></div>
+  </section>
   <section id="explicar" hidden></section>
   <section id="exemplos" hidden></section>
+  <footer class="rodape"><a href="/admin.html">Área administrativa</a><span>·</span><span>Indicação de animais para adoção</span></footer>
 </main>
 
 <script>
@@ -615,9 +635,29 @@ async function montarExemplos(alvo) {
 }
 
 // ---------- abas ----------
+async function montarAnuncios(alvo) {
+  const gradeAnuncios = alvo.querySelector('#grade-anuncios');
+  try {
+    const itens = await api('/api/anuncios');
+    gradeAnuncios.replaceChildren();
+    if (!itens.length) {
+      gradeAnuncios.append(h('p', { class: 'vazio' }, 'Ainda não há anúncios da comunidade. Seja a primeira pessoa a publicar!'));
+      return;
+    }
+    for (const a of itens) {
+      const card = h('article', { class: 'tag' });
+      const img = h('img', { src: a.fotoUrl, alt: 'Foto de ' + a.nome, loading: 'lazy' });
+      img.style.cssText = 'width:100%;aspect-ratio:1/1;object-fit:cover';
+      const header = h('header', {}, h('h3', {}, a.nome), h('p', { class: 'sub' }, a.especie + ' · ' + a.raca + ' · ' + a.cidade));
+      const corpo = h('div', { class: 'corpo' }, h('p', {}, a.descricao));
+      const link = h('a', { class: 'botao-anunciar', href: 'https://wa.me/55' + a.whatsapp, target: '_blank', rel: 'noopener' }, 'Tenho interesse — WhatsApp');
+      corpo.append(link); card.append(img, header, corpo); gradeAnuncios.append(card);
+    }
+  } catch (e) { gradeAnuncios.replaceChildren(erro(e)); }
+}
 const montadores = {
   buscar: montarBuscar, comofunciona: montarComoFunciona, abrigo: montarAbrigo, comparar: montarComparar, perfis: montarPerfis,
-  destaques: montarDestaques, explicar: montarExplicar, exemplos: montarExemplos
+  destaques: montarDestaques, 'anuncios-publicos': montarAnuncios, explicar: montarExplicar, exemplos: montarExemplos
 };
 const montadas = new Set();
 
