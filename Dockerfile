@@ -7,5 +7,5 @@ RUN mvn -q -DskipTests package
 FROM eclipse-temurin:17-jre
 WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
-ENV JAVA_TOOL_OPTIONS="-Xmx300m"
+ENV JAVA_TOOL_OPTIONS="-Xmx256m -XX:+UseSerialGC -Xss512k"
 ENTRYPOINT ["java", "-jar", "app.jar"]

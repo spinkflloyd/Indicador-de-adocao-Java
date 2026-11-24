@@ -9,7 +9,50 @@
 <label>Está vacinado?<select name="vacinado"><option value="true">Sim</option><option value="false">Não</option></select></label><label>É hipoalergênico?<select name="hipoalergenico"><option value="false">Não / não sei</option><option value="true">Sim</option></select></label>
 <label class="wide">Descrição<textarea name="descricao" maxlength="1200" rows="4" required placeholder="Conte a personalidade, cuidados, saúde e outras informações importantes."></textarea></label>
 <label>Nome do responsável<input name="responsavel" maxlength="80" required></label><label>WhatsApp com DDD<input name="whatsapp" type="tel" maxlength="20" placeholder="(87) 99999-9999" required></label><label>Cidade/UF<input name="cidade" maxlength="100" placeholder="Salgueiro - PE" required></label>
-<label class="wide">Foto do animal (JPG, PNG ou WEBP; até 5 MB)<input name="foto" type="file" accept="image/jpeg,image/png,image/webp" required><span class="hint">Envie uma foto nítida do animal. A imagem será armazenada junto ao anúncio.</span></label>
+<label class="wide">Foto do animal (JPG, PNG ou WEBP)<input name="foto" type="file" accept="image/jpeg,image/png,image/webp" required><span class="hint">Envie uma foto nítida do animal. Ela é reduzida automaticamente antes do envio (máximo de 2 MB).</span></label>
+<label class="wide" style="display:flex;gap:10px;align-items:flex-start;font-weight:400"><input type="checkbox" name="consentimento" value="true" required style="width:auto;margin-top:4px"><span>Autorizo a divulgação do meu nome e do meu WhatsApp neste site, para que interessados entrem em contato comigo. Posso pedir a remoção do anúncio à administração do site.</span></label>
+<div aria-hidden="true" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden"><label>Não preencha este campo<input name="website" tabindex="-1" autocomplete="off"></label></div>
 <div class="wide"><button type="submit">Publicar anúncio</button><p id="mensagem" role="status"></p></div></form></main><script>
-const form=document.getElementById('form'),msg=document.getElementById('mensagem');form.addEventListener('submit',async e=>{e.preventDefault();msg.className='';msg.textContent='Enviando anúncio...';const dados=new FormData(form);try{const r=await fetch('/api/anuncios',{method:'POST',body:dados});const corpo=await r.json().catch(()=>({}));if(!r.ok)throw new Error(corpo.message||corpo.error||'Não foi possível publicar. Confira os campos e tente novamente.');msg.className='msg ok';msg.textContent='Anúncio publicado! Você já pode encontrá-lo na página inicial.';form.reset();}catch(err){msg.className='msg erro';msg.textContent=err.message;}});
+const form = document.getElementById('form'), msg = document.getElementById('mensagem');
+const LIMITE_BYTES = 2 * 1024 * 1024;
+
+// Reduz a foto no navegador: no máximo 1280 px no lado maior, em JPEG. Se algo falhar, envia a original.
+async function reduzirImagem(arquivo, maxLado = 1280, qualidade = 0.82) {
+  if (!arquivo || !arquivo.type.startsWith('image/')) return arquivo;
+  try {
+    const imagem = await createImageBitmap(arquivo);
+    const escala = Math.min(1, maxLado / Math.max(imagem.width, imagem.height));
+    const largura = Math.round(imagem.width * escala), altura = Math.round(imagem.height * escala);
+    const canvas = document.createElement('canvas');
+    canvas.width = largura; canvas.height = altura;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, largura, altura);
+    ctx.drawImage(imagem, 0, 0, largura, altura);
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', qualidade));
+    return blob && blob.size < arquivo.size ? new File([blob], 'foto.jpg', { type: 'image/jpeg' }) : arquivo;
+  } catch (e) { return arquivo; }
+}
+
+form.addEventListener('submit', async e => {
+  e.preventDefault();
+  msg.className = ''; msg.textContent = 'Enviando anúncio...';
+  const dados = new FormData(form);
+  try {
+    const original = form.elements.foto.files[0];
+    const foto = await reduzirImagem(original);
+    if (foto && foto.size > LIMITE_BYTES) throw new Error('A foto continua maior que 2 MB. Escolha uma imagem menor.');
+    if (foto) dados.set('foto', foto, foto.name);
+
+    const r = await fetch('/api/anuncios', { method: 'POST', body: dados });
+    const corpo = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(corpo.message || corpo.error || 'Não foi possível publicar. Confira os campos e tente novamente.');
+    msg.className = 'msg ok';
+    msg.textContent = corpo.status === 'PENDENTE'
+      ? 'Anúncio recebido! Ele aparecerá no site depois de aprovado pela administração.'
+      : 'Anúncio publicado! Você já pode encontrá-lo na página inicial.';
+    form.reset();
+  } catch (err) {
+    msg.className = 'msg erro'; msg.textContent = err.message;
+  }
+});
 </script></body></html>

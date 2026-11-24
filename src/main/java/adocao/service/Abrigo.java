@@ -44,8 +44,8 @@ public class Abrigo {
             new Pessoa("carla",Moradia.CASA_PEQUENA,true,false,Tempo.MEDIO,false,false),
             new Pessoa("diego",Moradia.APARTAMENTO,false,false,Tempo.POUCO,true,true));
     }
-    public List<Animal> animais() { return animaisRepo==null ? animaisTeste : animaisRepo.findAll().stream().map(Abrigo::modelo).toList(); }
-    public List<Pessoa> pessoas() { return pessoasRepo==null ? pessoasTeste : pessoasRepo.findAll().stream().map(Abrigo::modelo).toList(); }
+    public List<Animal> animais() { return animaisRepo==null ? animaisTeste : animaisRepo.findAllByOrderByIdAsc().stream().map(Abrigo::modelo).toList(); }
+    public List<Pessoa> pessoas() { return pessoasRepo==null ? pessoasTeste : pessoasRepo.findAllByOrderByIdAsc().stream().map(Abrigo::modelo).toList(); }
     public Optional<Animal> animal(String nome) { return animaisRepo==null ? animaisTeste.stream().filter(a->a.nome().equalsIgnoreCase(nome)).findFirst() : animaisRepo.findByNomeIgnoreCase(nome).map(Abrigo::modelo); }
     public Optional<Pessoa> pessoa(String nome) { return pessoasRepo==null ? pessoasTeste.stream().filter(p->p.nome().equalsIgnoreCase(nome)).findFirst() : pessoasRepo.findByNomeIgnoreCase(nome).map(Abrigo::modelo); }
     public static Animal modelo(AnimalEntity a) { return new Animal(a.getNome(),a.getEspecie(),a.getRaca(),a.getPorte(),a.getFaixaEtaria(),a.getEnergia(),a.isSociavelCriancas(),a.isSociavelAnimais(),a.isVacinado(),a.isHipoalergenico()); }

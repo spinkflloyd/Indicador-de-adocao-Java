@@ -20,7 +20,6 @@ import adocao.web.Dtos.BuscaResponse;
 import adocao.web.Dtos.InteresseRequest;
 import adocao.web.Dtos.MensagemDto;
 import adocao.web.Dtos.PessoaDto;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -32,8 +31,6 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.time.Instant;
 import java.util.List;
 
@@ -44,14 +41,11 @@ public class AdocaoController {
     private final Abrigo abrigo;
     private final RegrasService regras;
     private final Interesses interesses;
-    private final String chaveAdmin;
 
-    public AdocaoController(Abrigo abrigo, RegrasService regras, Interesses interesses,
-                            @Value("${adocao.chave-admin:}") String chaveAdmin) {
+    public AdocaoController(Abrigo abrigo, RegrasService regras, Interesses interesses) {
         this.abrigo = abrigo;
         this.regras = regras;
         this.interesses = interesses;
-        this.chaveAdmin = chaveAdmin;
     }
 
     // ---------- Consultas ----------
@@ -142,15 +136,6 @@ public class AdocaoController {
 
         interesses.registrar(new Interesse(Instant.now(), animal.nome(), nome, contato, mensagem));
         return new MensagemDto("Recebemos seu interesse em " + animal.nome() + ".");
-    }
-
-    /** Leitura dos pedidos, protegida pela chave definida em ADOCAO_CHAVE. Sem chave definida, fica desativada. */
-    @GetMapping("/interesses")
-    public List<Interesse> listarInteresses(@RequestParam(required = false) String chave) {
-        boolean liberado = !chaveAdmin.isBlank() && chave != null
-            && MessageDigest.isEqual(chaveAdmin.getBytes(StandardCharsets.UTF_8), chave.getBytes(StandardCharsets.UTF_8));
-        if (!liberado) throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso negado.");
-        return interesses.todos();
     }
 
     // ---------- Busca (modo interativo) ----------

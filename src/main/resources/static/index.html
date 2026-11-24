@@ -635,6 +635,9 @@ async function montarExemplos(alvo) {
 }
 
 // ---------- abas ----------
+// O servidor guarda DDD + número; anúncios antigos podem já ter o 55 do país.
+const numeroWhatsapp = n => (n.length >= 12 && n.startsWith('55') ? n : '55' + n);
+
 async function montarAnuncios(alvo) {
   const gradeAnuncios = alvo.querySelector('#grade-anuncios');
   try {
@@ -650,7 +653,7 @@ async function montarAnuncios(alvo) {
       img.style.cssText = 'width:100%;aspect-ratio:1/1;object-fit:cover';
       const header = h('header', {}, h('h3', {}, a.nome), h('p', { class: 'sub' }, a.especie + ' · ' + a.raca + ' · ' + a.cidade));
       const corpo = h('div', { class: 'corpo' }, h('p', {}, a.descricao));
-      const link = h('a', { class: 'botao-anunciar', href: 'https://wa.me/55' + a.whatsapp, target: '_blank', rel: 'noopener' }, 'Tenho interesse — WhatsApp');
+      const link = h('a', { class: 'botao-anunciar', href: 'https://wa.me/' + numeroWhatsapp(a.whatsapp), target: '_blank', rel: 'noopener' }, 'Tenho interesse — WhatsApp');
       corpo.append(link); card.append(img, header, corpo); gradeAnuncios.append(card);
     }
   } catch (e) { gradeAnuncios.replaceChildren(erro(e)); }
